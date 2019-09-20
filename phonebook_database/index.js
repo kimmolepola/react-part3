@@ -12,7 +12,24 @@ app.use(bodyParser.json())
 morgan.token('data', (req, res) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
 
-app.post('/api/persons', (req, res) => {
+/* const requestLogger = (request, response, next) => {
+    console.log('Method:', request.method)
+    console.log('Path  :', request.path)
+    console.log('Body  :', request.body)
+    console.log('---')
+    next()
+}
+app.use(requestLogger)
+ */
+app.delete('/api/persons/:id', (req, res, next) => {
+    Person.findByIdAndRemove(req.params.id)
+        .then(result => {
+            res.status(204).end()
+        })
+        .catch(error => next(error))
+})
+
+app.post('/api/persons', (req, res, next) => {
     const name = req.body.name
     const number = req.body.number
     if (name === "" || name === undefined) {
@@ -26,45 +43,44 @@ app.post('/api/persons', (req, res) => {
     person.save().then(res => {
         console.log(`added ${req.body.name} number ${req.body.number} to phonebook`)
     })
+        .catch(error => next(error))
     res.json(person)
 })
 
-app.get('/api/persons/', (request, response) => {
+app.get('/api/persons/', (request, response, next) => {
     Person.find({}).then(persons => {
         response.json(persons)
     })
+        .catch(error => next(error))
 })
+
+
+const unknownEndpoint = (request, response) => {
+    console.error("Unknown endpoint")
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError' && error.kind === 'ObjectId') {
+        return response.status(400).send({ error: 'malformatted id' })
+    }
+    next(error)
+}
+app.use(errorHandler)
+
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
 
-/*
-app.post('/api/persons', (req, res) => {
-    const name = req.body.name
-    const number = req.body.number
-    if (name === "" || name === undefined) {
-        return res.status(400).json({ error: 'name missing' })
-    }
-    if (number === "" || number === undefined) {
-        return res.status(400).json({ error: 'number missing' })
-    }
-    if (persons.find(person => person.name === name)) {
-        return res.status(400).json({ error: 'name must be unique' })
-    }
-    const id = Math.floor(Math.random() * 10000000)
-    let person = { name: req.body.name, number: req.body.number }
-    person.id = id
-    persons = persons.concat(person)
-    res.json(person)
-})
 
-app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    persons = persons.filter(person => person.id !== id)
-    res.status(204).end()
-})
+
+
+/*
 
 app.get('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
