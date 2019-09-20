@@ -21,6 +21,34 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :d
 }
 app.use(requestLogger)
  */
+
+app.get('/info', (req, res) => {
+    Person.find({}).then(persons => {
+        res.send(`<div>Phonebook has info for ${persons.length} people</div><div>${Date()}</div>`)
+        console.log(`info: Phonebook has info for ${persons.length} people / ${Date()}`)
+    })
+    .catch(error => next(error))
+})
+
+app.get('/api/persons/:id', (req, res, next) => {
+    Person.findById(req.params.id)
+        .then(foundPerson => {
+            res.json(foundPerson.toJSON())
+            console.log(`found ${foundPerson}`)
+        })
+        .catch(error => next(error))
+})
+
+app.put('/api/persons/:id', (req, res, next) => {
+    const person = { name: req.body.name, number: req.body.number }
+    Person.findByIdAndUpdate(req.params.id, person, { new: true })
+        .then(updatedPerson => {
+            res.json(updatedPerson.toJSON())
+            console.log(`updated ${req.body.name} number ${req.body.number}`)
+        })
+        .catch(error => next(error))
+})
+
 app.delete('/api/persons/:id', (req, res, next) => {
     Person.findByIdAndRemove(req.params.id)
         .then(result => {
@@ -54,7 +82,6 @@ app.get('/api/persons/', (request, response, next) => {
         .catch(error => next(error))
 })
 
-
 const unknownEndpoint = (request, response) => {
     console.error("Unknown endpoint")
     response.status(404).send({ error: 'unknown endpoint' })
@@ -71,28 +98,7 @@ const errorHandler = (error, request, response, next) => {
 }
 app.use(errorHandler)
 
-
 const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
-
-
-
-
-/*
-
-app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
-
-    if (person) {
-        res.json(person)
-    } else {
-        res.status(404).end()
-    }
-})
-
-app.get('/info', (req, res) => {
-    res.send(`<div>Phonebook has info for ${persons.length} people</div><div>${Date()}</div>`)
-}) */
