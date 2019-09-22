@@ -42,6 +42,9 @@ const App = () => {
           setPersons(persons.concat(returnedPerson))
           Notification.Notify(`Added ${returnedPerson.name}`, "success", setNotification)
         })
+        .catch(error => {
+          Notification.Notify(error.response.data.error.message, "error", setNotification)
+        })
     } else {
       if (window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
         updatePerson(id, newName, newNumber)
@@ -72,8 +75,12 @@ const App = () => {
         }
       })
       .catch(error => {
-        setPersons(persons.filter(person => person.id !== id))
-        Notification.Notify(`Information of ${newName} has already been removed from server`, "error", setNotification)
+        if (error.response.status === 400) {
+          Notification.Notify(error.response.data.error.message, "error", setNotification)
+        } else if (error.response.status === 500) {
+          setPersons(persons.filter(person => person.id !== id))
+          Notification.Notify(`Information of ${newName} has already been removed from server`, "error", setNotification)
+        }
       })
   }
 

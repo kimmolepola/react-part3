@@ -27,7 +27,7 @@ app.get('/info', (req, res) => {
         res.send(`<div>Phonebook has info for ${persons.length} people</div><div>${Date()}</div>`)
         console.log(`info: Phonebook has info for ${persons.length} people / ${Date()}`)
     })
-    .catch(error => next(error))
+        .catch(error => next(error))
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
@@ -41,7 +41,7 @@ app.get('/api/persons/:id', (req, res, next) => {
 
 app.put('/api/persons/:id', (req, res, next) => {
     const person = { name: req.body.name, number: req.body.number }
-    Person.findByIdAndUpdate(req.params.id, person, { new: true })
+    Person.findByIdAndUpdate(req.params.id, person, { new: true, runValidators: true })
         .then(updatedPerson => {
             res.json(updatedPerson.toJSON())
             console.log(`updated ${req.body.name} number ${req.body.number}`)
@@ -68,11 +68,12 @@ app.post('/api/persons', (req, res, next) => {
     }
 
     const person = new Person({ name: req.body.name, number: req.body.number })
-    person.save().then(res => {
+    person.save().then(savedPerson => {
         console.log(`added ${req.body.name} number ${req.body.number} to phonebook`)
+        res.json(savedPerson.toJSON())
     })
         .catch(error => next(error))
-    res.json(person)
+
 })
 
 app.get('/api/persons/', (request, response, next) => {
@@ -90,9 +91,12 @@ app.use(unknownEndpoint)
 
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
-
+    console.log("errorriiiii",error,"--------------------")
     if (error.name === 'CastError' && error.kind === 'ObjectId') {
         return response.status(400).send({ error: 'malformatted id' })
+    }
+    if (error.name === 'ValidationError' || error.name === 'CastError') {
+        return response.status(400).send({ error: error })
     }
     next(error)
 }
