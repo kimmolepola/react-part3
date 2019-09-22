@@ -41,7 +41,7 @@ app.get('/api/persons/:id', (req, res, next) => {
 
 app.put('/api/persons/:id', (req, res, next) => {
     const person = { name: req.body.name, number: req.body.number }
-    Person.findByIdAndUpdate(req.params.id, person, { new: true, runValidators: true })
+    Person.findByIdAndUpdate(req.params.id, person, { new: true, runValidators: true, context: 'query' })
         .then(updatedPerson => {
             res.json(updatedPerson.toJSON())
             console.log(`updated ${req.body.name} number ${req.body.number}`)
@@ -91,7 +91,6 @@ app.use(unknownEndpoint)
 
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
-    console.log("errorriiiii",error,"--------------------")
     if (error.name === 'CastError' && error.kind === 'ObjectId') {
         return response.status(400).send({ error: 'malformatted id' })
     }
