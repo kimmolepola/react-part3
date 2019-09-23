@@ -1,1 +1,1 @@
-https://serene-retreat-18429.herokuapp.com/api/persons
+https://serene-retreat-18429.herokuapp.com/
